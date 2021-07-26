@@ -15,14 +15,14 @@ impl FoundPrimes {
     }
 
     pub fn get_last_found_prime(&self) -> usize {
-        if self.primes.len() == 0 {
+        if self.primes.is_empty() {
             return 0;
         }
-        return (self.primes[self.primes.len() - 1].number) as usize;
+        (self.primes[self.primes.len() - 1].number) as usize
     }
 
     pub fn get_nth_prime(&self, n: usize) -> usize {
-        return self.primes[n].number;
+        self.primes[n].number
     }
 
     pub fn len(&self) -> usize {
@@ -68,7 +68,7 @@ impl SieveChunk {
                 return Some(i + self.offset);
             }
         }
-        return None;
+        None
     }
 
     pub fn process(&mut self, found_primes: &mut FoundPrimes, limit: usize) {
@@ -133,7 +133,7 @@ impl Sieve {
         if !self.processed {
             panic!("Should be processed!");
         }
-        return self.found_primes.get_nth_prime(n);
+        self.found_primes.get_nth_prime(n)
     }
 
     pub fn ensure_sieve_pricked(&mut self) {
@@ -153,7 +153,7 @@ impl Sieve {
 pub fn nth(n: u32) -> u32 {
     let mut sieve = Sieve::new(n as usize);
     sieve.ensure_sieve_pricked();
-    return sieve.get_nth_prime(n as usize) as u32;
+    sieve.get_nth_prime(n as usize) as u32
 }
 
 #[cfg(test)]
