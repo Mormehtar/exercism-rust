@@ -1,6 +1,35 @@
 struct SievePointer {
-    number: u32,
+    number: usize,
     last_value: usize
+}
+
+struct FoundPrimes {
+    primes: Vec<SievePointer>
+}
+
+impl FoundPrimes {
+    pub fn new(size: usize) -> FoundPrimes {
+        FoundPrimes{primes: Vec::with_capacity(size)}
+    }
+
+    pub fn get_last_found_prime(&self) -> usize {
+        if self.primes.len() == 0 {
+            return 0;
+        }
+        return  (self.primes[self.primes.len() - 1].number) as usize;
+    }
+
+    pub fn get_nth_prime(&self, n: usize) -> usize {
+        return self.primes[n].number;
+    }
+
+    pub fn len(&self) -> usize {
+        self.primes.len()
+    }
+
+    pub fn push(&mut self, found_prime: SievePointer) {
+        self.primes.push(found_prime);
+    }
 }
 
 struct SieveChunk {
@@ -16,7 +45,7 @@ impl SieveChunk {
         SieveChunk {sieve, offset}
     }
 
-    pub fn prick_number(&mut self, mut number: &mut SievePointer) {
+    pub fn prickle_number(&mut self, mut number: &mut SievePointer) {
         loop {
             let new_value = number.last_value + (number.number as usize);
             let pointer = new_value - self.offset;
@@ -40,52 +69,87 @@ impl SieveChunk {
         }
         return None;
     }
+
+    pub fn process(&mut self, found_primes: &mut FoundPrimes, limit: usize) {
+        self.prickle_known_primes(found_primes);
+        self.look_for_new_primes(found_primes, limit);
+    }
+
+    fn prickle_known_primes(&mut self, found_primes: &mut FoundPrimes) {
+        for prime in &mut found_primes.primes {
+            self.prickle_number(prime);
+        }
+    }
+
+    fn look_for_new_primes(&mut self, found_primes: &mut FoundPrimes, limit: usize) {
+        loop {
+            let next_prime_candidate: usize = found_primes.get_last_found_prime() + 1;
+            let next_prime = self.get_next_prime_from(next_prime_candidate);
+            match next_prime {
+                Some(number) => self.add_prime(number, found_primes),
+                _ => break,
+            }
+            if found_primes.len() > limit {
+                break;
+            }
+        }
+    }
+
+    fn add_prime(&mut self, prime: usize, found_primes: &mut FoundPrimes) {
+        let mut new_prime = SievePointer { number: prime, last_value: prime };
+        self.prickle_number(&mut new_prime);
+        found_primes.push(new_prime);
+    }
+}
+
+struct Sieve {
+    found_primes: FoundPrimes,
+    processed_part: usize,
+    chunk_size: usize,
+    limit: usize,
+    processed: bool,
+}
+
+impl Sieve {
+    pub fn new(limit: usize) -> Sieve {
+        let chunk_size = limit.next_power_of_two();
+        Sieve {
+            chunk_size,
+            limit,
+            processed: false,
+            processed_part: 2,
+            found_primes: FoundPrimes::new(limit),
+        }
+    }
+
+    pub fn get_nth_prime(&mut self, n: usize) -> usize {
+        if n > self.limit {
+            panic!("Getting more then limit!");
+        }
+        if !self.processed {
+            panic!("Should be processed!");
+        }
+        return self.found_primes.get_nth_prime(n);
+    }
+
+    pub fn ensure_sieve_pricked(&mut self) {
+        while self.found_primes.len() <= self.limit {
+            self.find_chunk_of_primes();
+        }
+        self.processed = true;
+    }
+
+    fn find_chunk_of_primes(&mut self) {
+        let mut sieve_chunk: SieveChunk = SieveChunk::new(self.chunk_size, self.processed_part);
+        sieve_chunk.process(&mut self.found_primes, self.limit);
+        self.processed_part += self.chunk_size;
+    }
 }
 
 pub fn nth(n: u32) -> u32 {
-    let prime_index = n as usize;
-    let mut found_numbers: Vec<SievePointer> = Vec::with_capacity(prime_index + 1);
-    let mut offset = 2;  // 0, 1
-    let chunk_size: usize = prime_index.next_power_of_two();
-
-    while found_numbers.len() <= prime_index {
-        found_numbers = process_chunk(found_numbers, offset, chunk_size, prime_index + 1);
-        offset += chunk_size;
-    }
-    return found_numbers[prime_index].number;
-}
-
-fn process_chunk(
-    mut found_numbers: Vec<SievePointer>,
-    offset: usize,
-    chunk_size: usize,
-    limit: usize,
-) -> Vec<SievePointer> {
-    let mut sieve = SieveChunk::new(chunk_size, offset);
-    for prime in &mut found_numbers {
-        sieve.prick_number(prime);
-    }
-    loop {
-        let mut last_prime: usize = 0;
-        if found_numbers.len() > 0 {
-            last_prime = (found_numbers[found_numbers.len() - 1].number + 1) as usize;
-        }
-        let next_prime = sieve.get_next_prime_from(last_prime);
-        match next_prime {
-            Some(number) => {
-                {
-                    let mut new_prime = SievePointer { number: (number) as u32, last_value: number };
-                    sieve.prick_number(&mut new_prime);
-                    found_numbers.push(new_prime);
-                }
-            },
-            _ => break,
-        }
-        if found_numbers.len() == limit {
-            break;
-        }
-    }
-    return found_numbers
+    let mut sieve = Sieve::new(n as usize);
+    sieve.ensure_sieve_pricked();
+    return sieve.get_nth_prime(n as usize) as u32;
 }
 
 
