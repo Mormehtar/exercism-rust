@@ -1,22 +1,24 @@
 struct SievePointer {
     number: usize,
-    last_value: usize
+    last_value: usize,
 }
 
 struct FoundPrimes {
-    primes: Vec<SievePointer>
+    primes: Vec<SievePointer>,
 }
 
 impl FoundPrimes {
     pub fn new(size: usize) -> FoundPrimes {
-        FoundPrimes{primes: Vec::with_capacity(size)}
+        FoundPrimes {
+            primes: Vec::with_capacity(size),
+        }
     }
 
     pub fn get_last_found_prime(&self) -> usize {
         if self.primes.len() == 0 {
             return 0;
         }
-        return  (self.primes[self.primes.len() - 1].number) as usize;
+        return (self.primes[self.primes.len() - 1].number) as usize;
     }
 
     pub fn get_nth_prime(&self, n: usize) -> usize {
@@ -34,15 +36,14 @@ impl FoundPrimes {
 
 struct SieveChunk {
     sieve: Vec<bool>,
-    offset: usize
+    offset: usize,
 }
-
 
 impl SieveChunk {
     pub fn new(size: usize, offset: usize) -> SieveChunk {
         let mut sieve: Vec<bool> = Vec::with_capacity(size);
         sieve.resize(size, true);
-        SieveChunk {sieve, offset}
+        SieveChunk { sieve, offset }
     }
 
     pub fn prickle_number(&mut self, mut number: &mut SievePointer) {
@@ -62,7 +63,7 @@ impl SieveChunk {
         if from > self.offset {
             start = from - self.offset;
         }
-        for i in start .. self.sieve.len() {
+        for i in start..self.sieve.len() {
             if self.sieve[i] {
                 return Some(i + self.offset);
             }
@@ -96,7 +97,10 @@ impl SieveChunk {
     }
 
     fn add_prime(&mut self, prime: usize, found_primes: &mut FoundPrimes) {
-        let mut new_prime = SievePointer { number: prime, last_value: prime };
+        let mut new_prime = SievePointer {
+            number: prime,
+            last_value: prime,
+        };
         self.prickle_number(&mut new_prime);
         found_primes.push(new_prime);
     }
@@ -152,7 +156,6 @@ pub fn nth(n: u32) -> u32 {
     return sieve.get_nth_prime(n as usize) as u32;
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,5 +190,4 @@ mod tests {
     fn test_very_very_big_prime() {
         assert_eq!(nth(1_000_000), 15485867);
     }
-
 }
